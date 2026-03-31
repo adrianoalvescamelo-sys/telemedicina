@@ -12,5 +12,8 @@
     "build:web": "npm run build --workspace=apps/web",
     "build:api": "npm run build --workspace=apps/api",
     "setup:linux": "npm install --os=linux --cpu=x64 --optional"
+  },
+  "engines": {
+    "node": "20.x"
   }
 }
