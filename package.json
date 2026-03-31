@@ -11,6 +11,6 @@
     "dev:api": "npm run dev --workspace=apps/api",
     "build:web": "npm run build --workspace=apps/web",
     "build:api": "npm run build --workspace=apps/api",
-    "postinstall": "npm rebuild"
+    "setup:linux": "npm install --os=linux --cpu=x64 --optional"
   }
 }
