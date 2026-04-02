@@ -4,7 +4,7 @@ services:
     runtime: node
     region: oregon
     plan: free
-    buildCommand: cd apps/api && npm install && npm run build
+    buildCommand: npm install --include=dev && npm run build
     startCommand: cd apps/api && npm run start:prod
     envVars:
       - key: NODE_ENV
