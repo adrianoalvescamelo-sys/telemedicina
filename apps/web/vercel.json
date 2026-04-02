@@ -1,5 +1,5 @@
 {
-  "installCommand": "npm install --prefix=../..",
+  "installCommand": "npm install --prefix=../.. && npm rebuild",
   "buildCommand": "npm run build",
   "framework": "vite",
   "outputDirectory": "dist"
