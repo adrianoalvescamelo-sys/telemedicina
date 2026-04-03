@@ -72,39 +72,67 @@ export default function ConsultaPage() {
     setCarregandoIA(false)
   }
 
-  async function iniciarGravacao(speaker: 'medico'|'paciente') {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-    const mr = new MediaRecorder(stream, { mimeType: 'audio/webm' })
+  const speakerRef = useRef<'medico'|'paciente'>('paciente')
+  const streamRef = useRef<MediaStream|null>(null)
+  const intervaloRef = useRef<NodeJS.Timeout|null>(null)
+
+  async function enviarChunk(blob: Blob, speaker: 'medico'|'paciente') {
+    if (blob.size < 1000) return
+    const fd = new FormData()
+    fd.append('audio', blob, 'audio.webm')
+    fd.append('consulta_id', id as string)
+    fd.append('speaker', speaker)
+    try {
+      const r = await fetch('/api/transcricao', { method:'POST', headers:{Authorization:`Bearer ${token()}`}, body:fd })
+      const j = await r.json()
+      if (j.data?.texto) {
+        const novoChunk = { speaker, texto: j.data.texto, ts: new Date().toISOString() }
+        setTranscricao(prev => {
+          const novo = [...prev, novoChunk]
+          if (novo.length % 4 === 0) buscarSugestoes(novo)
+          return novo
+        })
+      }
+    } catch(e) { console.error(e) }
+  }
+
+  function iniciarCiclo(speaker: 'medico'|'paciente') {
+    if (!streamRef.current) return
+    const mr = new MediaRecorder(streamRef.current, { mimeType: 'audio/webm' })
     mediaRecorderRef.current = mr
     chunksRef.current = []
-    mr.ondataavailable = e => chunksRef.current.push(e.data)
-    mr.onstop = async () => {
-      const blob = new Blob(chunksRef.current, { type:'audio/webm' })
-      const fd = new FormData()
-      fd.append('audio', blob, 'audio.webm')
-      fd.append('consulta_id', id as string)
-      fd.append('speaker', speaker)
-      try {
-        const r = await fetch('/api/transcricao', { method:'POST', headers:{Authorization:`Bearer ${token()}`}, body:fd })
-        const j = await r.json()
-        if (j.data?.texto) {
-          const novoChunk = { speaker, texto: j.data.texto, ts: new Date().toISOString() }
-          setTranscricao(prev => {
-            const novo = [...prev, novoChunk]
-            // A cada 4 chunks, pede sugestões da IA
-            if (novo.length % 4 === 0) buscarSugestoes(novo)
-            return novo
-          })
-        }
-      } catch(e) { console.error(e) }
-      stream.getTracks().forEach(t => t.stop())
+    mr.ondataavailable = e => { if (e.data.size > 0) chunksRef.current.push(e.data) }
+    mr.onstop = () => {
+      const blob = new Blob(chunksRef.current, { type: 'audio/webm' })
+      enviarChunk(blob, speaker)
     }
     mr.start()
+    // Para após 10s e reinicia automaticamente
+    setTimeout(() => {
+      if (mr.state === 'recording') mr.stop()
+    }, 10000)
+  }
+
+  async function iniciarGravacao(speaker: 'medico'|'paciente') {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+    streamRef.current = stream
+    speakerRef.current = speaker
     setGravando(true)
+
+    // Primeiro ciclo
+    iniciarCiclo(speaker)
+
+    // Ciclos subsequentes a cada 10s
+    intervaloRef.current = setInterval(() => {
+      iniciarCiclo(speakerRef.current)
+    }, 10500)
   }
 
   function pararGravacao() {
-    mediaRecorderRef.current?.stop()
+    if (intervaloRef.current) clearInterval(intervaloRef.current)
+    if (mediaRecorderRef.current?.state === 'recording') mediaRecorderRef.current.stop()
+    streamRef.current?.getTracks().forEach(t => t.stop())
+    streamRef.current = null
     setGravando(false)
   }
 
