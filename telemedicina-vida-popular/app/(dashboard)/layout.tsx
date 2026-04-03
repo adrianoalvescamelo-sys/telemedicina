@@ -2,7 +2,7 @@
 import { useRouter, usePathname } from 'next/navigation'
 import { useState, useEffect } from 'react'
 
-const NAV = [
+const NAV: { href: string; label: string; icon: string }[] = [
   { href: '/dashboard',  label: 'Dashboard',    icon: 'M3 3h7v7H3zm11 0h7v7h-7zM3 14h7v7H3zm11 3h2v-2h-2zm0 4h2v-2h-2zm4-4h-2v2h2v2h-4v-4h2v-2h2zm-4 0v-2h2v2z' },
   { href: '/agenda',     label: 'Agenda',       icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2z' },
   { href: '/consultas',  label: 'Teleconsultas',icon: 'M23 7l-7 5 7 5V7zM1 5h15a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H1a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z' },
@@ -57,7 +57,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <path d={n.icon}/>
               </svg>
               {n.label}
-              {n.badge && <span style={{marginLeft:'auto',background:'#1D9E75',color:'white',fontSize:'9px',fontWeight:'600',padding:'2px 6px',borderRadius:'10px'}}>3</span>}
             </div>
           ))}
         </nav>
