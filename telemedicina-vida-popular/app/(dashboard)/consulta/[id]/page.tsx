@@ -76,8 +76,22 @@ export default function ConsultaPage() {
   const streamRef = useRef<MediaStream|null>(null)
   const intervaloRef = useRef<NodeJS.Timeout|null>(null)
 
+  async function temVoz(blob: Blob): Promise<boolean> {
+    try {
+      const arrayBuffer = await blob.arrayBuffer()
+      const ctx = new AudioContext()
+      const audio = await ctx.decodeAudioData(arrayBuffer)
+      const data = audio.getChannelData(0)
+      const rms = Math.sqrt(data.reduce((sum, v) => sum + v * v, 0) / data.length)
+      await ctx.close()
+      return rms > 0.01 // limiar de volume — abaixo disso é silêncio
+    } catch { return false }
+  }
+
   async function enviarChunk(blob: Blob, speaker: 'medico'|'paciente') {
     if (blob.size < 1000) return
+    const voz = await temVoz(blob)
+    if (!voz) return
     const fd = new FormData()
     fd.append('audio', blob, 'audio.webm')
     fd.append('consulta_id', id as string)
