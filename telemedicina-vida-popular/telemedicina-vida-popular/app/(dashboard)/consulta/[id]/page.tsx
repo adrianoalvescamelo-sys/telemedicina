@@ -1,6 +1,9 @@
 'use client'
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
+import dynamic from 'next/dynamic'
+
+const VideoCall = dynamic(() => import('@/app/components/VideoCall'), { ssr: false })
 
 interface Sugestao { nome:string; cid:string; confianca:number; descricao:string; conduta_sugerida:string; alertas?:string[] }
 interface Chunk { speaker:string; texto:string; ts:string }
@@ -13,6 +16,7 @@ export default function ConsultaPage() {
   const [sugestoes, setSugestoes] = useState<Sugestao[]>([])
   const [resumo, setResumo] = useState('')
   const [alertas, setAlertas] = useState<string[]>([])
+  const [linkCopiado, setLinkCopiado] = useState(false)
   const [gravando, setGravando] = useState(false)
   const [tempoConsulta, setTempoConsulta] = useState(0)
   const [carregandoIA, setCarregandoIA] = useState(false)
@@ -140,43 +144,50 @@ export default function ConsultaPage() {
             {consulta.alergias && (consulta.alergias as unknown as string[]).length > 0 && <span style={{marginLeft:'8px',background:'#FAECE7',color:'#D85A30',padding:'2px 8px',borderRadius:'20px',fontSize:'10px'}}>⚠ Alergias: {(consulta.alergias as unknown as string[]).join(', ')}</span>}
           </p>
         </div>
-        <button onClick={encerrarConsulta} style={{background:'#c0392b',color:'white',border:'none',borderRadius:'8px',padding:'9px 16px',fontSize:'13px',fontWeight:'500',cursor:'pointer'}}>Encerrar consulta</button>
+        <div style={{display:'flex',gap:'8px'}}>
+          <button
+            onClick={() => {
+              const link = `${window.location.origin}/sala/${id}`
+              navigator.clipboard.writeText(link)
+              setLinkCopiado(true)
+              setTimeout(() => setLinkCopiado(false), 2500)
+            }}
+            style={{background:linkCopiado?'#1D9E75':'#E6F1FB',color:linkCopiado?'white':'#185FA5',border:'none',borderRadius:'8px',padding:'9px 16px',fontSize:'13px',fontWeight:'500',cursor:'pointer'}}
+          >
+            {linkCopiado ? '✓ Link copiado!' : '🔗 Link do paciente'}
+          </button>
+          <button onClick={encerrarConsulta} style={{background:'#c0392b',color:'white',border:'none',borderRadius:'8px',padding:'9px 16px',fontSize:'13px',fontWeight:'500',cursor:'pointer'}}>Encerrar consulta</button>
+        </div>
       </div>
 
       <div style={{display:'grid',gridTemplateColumns:'1fr 340px',gap:'16px',flex:1,minHeight:0}}>
-        {/* VIDEO SIMULADO */}
+        {/* VÍDEO WEBRTC */}
         <div style={{display:'flex',flexDirection:'column',gap:'12px'}}>
-          <div style={{background:'#0a1628',borderRadius:'12px',flex:1,position:'relative',overflow:'hidden',display:'flex',alignItems:'center',justifyContent:'center',minHeight:'250px'}}>
-            <div style={{textAlign:'center'}}>
-              <div style={{width:'72px',height:'72px',borderRadius:'50%',background:'rgba(55,138,221,0.2)',border:'2px solid rgba(55,138,221,0.4)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'24px',fontWeight:'500',color:'#B5D4F4',margin:'0 auto 10px'}}>
-                {consulta.paciente_nome?.split(' ').map((n:string)=>n[0]).slice(0,2).join('')}
-              </div>
-              <div style={{color:'white',fontSize:'14px',fontWeight:'500'}}>{consulta.paciente_nome}</div>
-              <div style={{color:'rgba(255,255,255,0.4)',fontSize:'11px',marginTop:'4px'}}>Aguardando conexão de vídeo</div>
-              <div style={{fontSize:'11px',color:'rgba(255,255,255,0.3)',marginTop:'6px',fontFamily:'monospace'}}>Sala: {consulta.sala_id}</div>
-            </div>
-            <div style={{position:'absolute',bottom:'12px',right:'12px',width:'96px',height:'68px',background:'#1a2a44',borderRadius:'8px',border:'1.5px solid rgba(55,138,221,0.4)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'20px',color:'rgba(255,255,255,0.6)'}}>👩‍⚕️</div>
-            <div style={{position:'absolute',top:'12px',left:'12px',background:'rgba(0,0,0,0.5)',padding:'5px 10px',borderRadius:'20px',display:'flex',alignItems:'center',gap:'6px'}}>
-              <div style={{width:'6px',height:'6px',borderRadius:'50%',background:gravando?'#1D9E75':'#888'}}></div>
-              <span style={{color:'white',fontSize:'11px',fontFamily:'monospace'}}>{formatTempo(tempoConsulta)}</span>
-            </div>
+          <div style={{flex:1,minHeight:'250px'}}>
+            <VideoCall salaId={id as string} role="medico" nomePaciente={consulta.paciente_nome} />
           </div>
 
-          {/* CONTROLES */}
-          <div style={{background:'white',borderRadius:'12px',padding:'12px 16px',border:'0.5px solid rgba(0,0,0,0.1)',display:'flex',alignItems:'center',justifyContent:'center',gap:'10px',flexShrink:0}}>
-            <button onClick={()=>gravando?pararGravacao():iniciarGravacao('paciente')}
-              style={{padding:'9px 18px',borderRadius:'8px',border:'none',background:gravando?'#D85A30':'#185FA5',color:'white',fontSize:'12px',fontWeight:'500',cursor:'pointer',display:'flex',alignItems:'center',gap:'6px'}}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
-              {gravando ? 'Parar gravação' : 'Gravar paciente'}
-            </button>
-            <button onClick={()=>gravando?pararGravacao():iniciarGravacao('medico')}
-              style={{padding:'9px 18px',borderRadius:'8px',border:'0.5px solid rgba(0,0,0,0.25)',background:'white',color:'#185FA5',fontSize:'12px',fontWeight:'500',cursor:'pointer'}}>
-              Gravar médico
-            </button>
-            <button onClick={()=>buscarSugestoes(transcricao)} disabled={carregandoIA}
-              style={{padding:'9px 18px',borderRadius:'8px',border:'none',background:carregandoIA?'#999':'#7F77DD',color:'white',fontSize:'12px',fontWeight:'500',cursor:'pointer',marginLeft:'8px'}}>
-              {carregandoIA?'Analisando...':'🤖 Analisar IA'}
-            </button>
+          {/* CONTROLES DE GRAVAÇÃO */}
+          <div style={{background:'white',borderRadius:'12px',padding:'12px 16px',border:'0.5px solid rgba(0,0,0,0.1)',display:'flex',alignItems:'center',justifyContent:'space-between',flexShrink:0}}>
+            <div style={{display:'flex',alignItems:'center',gap:'8px'}}>
+              <div style={{width:'6px',height:'6px',borderRadius:'50%',background:gravando?'#1D9E75':'#ccc'}}></div>
+              <span style={{fontSize:'12px',color:'#888',fontFamily:'monospace'}}>{formatTempo(tempoConsulta)}</span>
+            </div>
+            <div style={{display:'flex',gap:'8px'}}>
+              <button onClick={()=>gravando?pararGravacao():iniciarGravacao('paciente')}
+                style={{padding:'8px 16px',borderRadius:'8px',border:'none',background:gravando?'#D85A30':'#185FA5',color:'white',fontSize:'12px',fontWeight:'500',cursor:'pointer',display:'flex',alignItems:'center',gap:'6px'}}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+                {gravando ? 'Parar' : 'Gravar paciente'}
+              </button>
+              <button onClick={()=>gravando?pararGravacao():iniciarGravacao('medico')}
+                style={{padding:'8px 16px',borderRadius:'8px',border:'0.5px solid rgba(0,0,0,0.25)',background:'white',color:'#185FA5',fontSize:'12px',fontWeight:'500',cursor:'pointer'}}>
+                Gravar médico
+              </button>
+              <button onClick={()=>buscarSugestoes(transcricao)} disabled={carregandoIA}
+                style={{padding:'8px 16px',borderRadius:'8px',border:'none',background:carregandoIA?'#999':'#7F77DD',color:'white',fontSize:'12px',fontWeight:'500',cursor:'pointer'}}>
+                {carregandoIA?'Analisando...':'🤖 IA'}
+              </button>
+            </div>
           </div>
         </div>
 
