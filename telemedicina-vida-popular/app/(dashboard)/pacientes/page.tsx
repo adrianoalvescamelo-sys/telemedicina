@@ -47,7 +47,7 @@ export default function PacientesPage() {
     const j = await r.json(); setSaving(false)
     if (!r.ok) { setToast(j.error || 'Erro'); return }
     setModal(false); setToast('Paciente cadastrado!'); load()
-    setForm({ nome:'',cpf:'',rg:'',data_nasc:'',sexo:'Feminino',telefone:'',email:'',endereco:'',convenio:'Particular',alergias:'' })
+    setForm({ nome:'',cpf:'',rg:'',data_nasc:'',sexo:'Feminino',telefone:'',email:'',endereco:'',convenio:'Particular',alergias:'',paciente_id:'' })
     setTimeout(() => setToast(''), 3000)
   }
 
