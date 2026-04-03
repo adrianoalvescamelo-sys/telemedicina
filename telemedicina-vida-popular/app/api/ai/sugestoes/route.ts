@@ -5,11 +5,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { autenticarRequisicao } from '@/app/lib/auth'
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY!,
-})
+export const dynamic = 'force-dynamic'
 
 export async function POST(req: NextRequest) {
+  const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! })
   const medico = autenticarRequisicao(req)
   if (!medico) {
     return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
