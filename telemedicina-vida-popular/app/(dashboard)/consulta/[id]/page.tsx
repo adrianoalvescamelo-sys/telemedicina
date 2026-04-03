@@ -153,6 +153,27 @@ export default function ConsultaPage() {
   async function encerrarConsulta() {
     pararGravacao()
     const textoTrans = transcricao.map(c=>`${c.speaker==='medico'?'Médico':'Paciente'}: ${c.texto}`).join('\n')
+
+    // Garante sugestões da IA ao encerrar (independente da qtd de chunks)
+    let sugestoesFinais = sugestoes
+    if (transcricao.length > 0 && sugestoes.length === 0) {
+      try {
+        const historico = `Paciente: ${consulta.paciente_nome}. Alergias: ${(consulta.alergias as unknown as string[])?.join(', ')||'Nenhuma conhecida'}`
+        const r = await fetch('/api/ai/sugestoes', {
+          method:'POST',
+          headers:{'Content-Type':'application/json','Authorization':`Bearer ${token()}`},
+          body: JSON.stringify({ transcricao: textoTrans, historico_paciente: historico })
+        })
+        const j = await r.json()
+        if (j.data?.sugestoes) {
+          sugestoesFinais = j.data.sugestoes
+          setSugestoes(sugestoesFinais)
+          setResumo(j.data.resumo_clinico || '')
+          setAlertas(j.data.alertas_gerais || [])
+        }
+      } catch(e) { console.error(e) }
+    }
+
     // Salva no prontuário
     await fetch('/api/prontuarios', {
       method:'POST',
@@ -161,7 +182,7 @@ export default function ConsultaPage() {
         consulta_id: id,
         paciente_id: consulta.paciente_id,
         transcricao: textoTrans,
-        sugestoes_ia: sugestoes,
+        sugestoes_ia: sugestoesFinais,
       })
     })
     await fetch(`/api/consultas/${id}`, {
