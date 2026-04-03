@@ -56,7 +56,7 @@ export async function GET(req: NextRequest) {
   const consulta_id = searchParams.get('consulta_id')
   if (!consulta_id) return NextResponse.json({ error: 'consulta_id obrigatório' }, { status: 400 })
 
-  const { rows } = await sql`
+  const rows = await sql`
     SELECT speaker, texto, ts
     FROM transcricoes
     WHERE consulta_id = ${consulta_id}
