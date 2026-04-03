@@ -114,8 +114,11 @@ export default function ProntuarioPage() {
         <div style={{display:'flex',gap:'8px'}}>
           <button onClick={copiarProntuario} style={{display:'flex',alignItems:'center',gap:'6px',padding:'8px 14px',background:copied?'#EAF3DE':'white',border:`0.5px solid ${copied?'#639922':'#B5D4F4'}`,borderRadius:'8px',cursor:'pointer',fontSize:'12px',fontWeight:'500',color:copied?'#3B6D11':'#0C447C'}}>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-            {copied?'Copiado!':'Copiar prontuário'}
+            {copied?'Copiado!':'Copiar'}
           </button>
+          <a href={`/receituario/${id}`} style={{display:'flex',alignItems:'center',gap:'6px',padding:'8px 14px',background:'white',border:'0.5px solid #B5D4F4',borderRadius:'8px',textDecoration:'none',fontSize:'12px',fontWeight:'500',color:'#0C447C'}}>
+            🖨️ Receituário / PDF
+          </a>
           <button onClick={salvar} disabled={saving} style={{padding:'8px 16px',background:saving?'#999':'#185FA5',color:'white',border:'none',borderRadius:'8px',fontSize:'12px',fontWeight:'500',cursor:'pointer'}}>
             {saving?'Salvando...':'Salvar'}
           </button>

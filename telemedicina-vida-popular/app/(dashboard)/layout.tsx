@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react'
 
 const NAV = [
   { href: '/dashboard',  label: 'Dashboard',    icon: 'M3 3h7v7H3zm11 0h7v7h-7zM3 14h7v7H3zm11 3h2v-2h-2zm0 4h2v-2h-2zm4-4h-2v2h2v2h-4v-4h2v-2h2zm-4 0v-2h2v2z' },
-  { href: '/consultas',  label: 'Teleconsulta', icon: 'M23 7l-7 5 7 5V7zM1 5h15a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H1a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z', badge: true },
+  { href: '/agenda',     label: 'Agenda',       icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2z' },
+  { href: '/consultas',  label: 'Teleconsultas',icon: 'M23 7l-7 5 7 5V7zM1 5h15a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H1a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z' },
   { href: '/prontuarios',label: 'Prontuários',  icon: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zm0 0v6h6M9 13h6M9 17h6' },
   { href: '/pacientes',  label: 'Pacientes',    icon: 'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm8 0a3 3 0 0 1 0 6M23 21v-2a4 4 0 0 0-3-3.87' },
   { href: '/medicos',    label: 'Médicos',      icon: 'M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z' },

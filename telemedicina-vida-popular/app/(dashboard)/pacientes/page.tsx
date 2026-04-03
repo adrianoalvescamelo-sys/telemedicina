@@ -1,15 +1,19 @@
 'use client'
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 
 interface Paciente { id:string; nome:string; cpf:string; data_nasc:string; sexo:string; telefone:string; email:string; convenio:string; alergias:string[] }
 const SEXOS = ['Feminino','Masculino','Outro']
 const CONVENIOS = ['Particular','Unimed','SUS','Bradesco Saúde','Amil','Porto Seguro','Outros']
 
 export default function PacientesPage() {
+  const router = useRouter()
   const [lista, setLista] = useState<Paciente[]>([])
   const [q, setQ] = useState('')
   const [modal, setModal] = useState(false)
-  const [form, setForm] = useState({ nome:'',cpf:'',rg:'',data_nasc:'',sexo:'Feminino',telefone:'',email:'',endereco:'',convenio:'Particular',alergias:'' })
+  const [modalConsulta, setModalConsulta] = useState(false)
+  const [form, setForm] = useState({ nome:'',cpf:'',rg:'',data_nasc:'',sexo:'Feminino',telefone:'',email:'',endereco:'',convenio:'Particular',alergias:'', paciente_id:'' })
+  const [formConsulta, setFormConsulta] = useState({ paciente_id:'', agendada_para:'', tipo:'teleconsulta' })
   const [saving, setSaving] = useState(false)
   const [toast, setToast] = useState('')
 
@@ -21,6 +25,20 @@ export default function PacientesPage() {
   }
 
   useEffect(() => { load() }, [])
+
+  async function agendarConsulta(e: React.FormEvent) {
+    e.preventDefault(); setSaving(true)
+    const r = await fetch('/api/consultas', {
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':`Bearer ${token()}`},
+      body: JSON.stringify(formConsulta)
+    })
+    const j = await r.json(); setSaving(false)
+    if (!r.ok) { setToast(j.error||'Erro ao agendar'); setTimeout(()=>setToast(''),3000); return }
+    setModalConsulta(false)
+    setToast('Consulta agendada! Iniciando...')
+    setTimeout(() => router.push(`/consulta/${j.data.id}`), 1000)
+  }
 
   async function salvar(e: React.FormEvent) {
     e.preventDefault(); setSaving(true)
@@ -76,7 +94,14 @@ export default function PacientesPage() {
                 <td style={{padding:'12px 16px'}}>
                   {p.alergias?.length > 0 && <span style={{background:'#FAECE7',color:'#D85A30',fontSize:'10px',padding:'3px 8px',borderRadius:'20px',fontWeight:'500'}}>⚠ {p.alergias.slice(0,1).join('')}{p.alergias.length>1?` +${p.alergias.length-1}`:''}</span>}
                 </td>
-                <td style={{padding:'12px 16px'}}><a href={`/pacientes/${p.id}`} style={{color:'#185FA5',fontSize:'12px',textDecoration:'none'}}>Ver →</a></td>
+                <td style={{padding:'12px 16px'}}>
+                  <button onClick={()=>{
+                    setFormConsulta(f=>({...f,paciente_id:p.id,agendada_para:new Date().toISOString().slice(0,16)}))
+                    setModalConsulta(true)
+                  }} style={{background:'#185FA5',color:'white',border:'none',borderRadius:'6px',padding:'6px 12px',fontSize:'11px',fontWeight:'500',cursor:'pointer'}}>
+                    📹 Teleconsulta
+                  </button>
+                </td>
               </tr>
             ))}
             {lista.length === 0 && <tr><td colSpan={7} style={{padding:'40px',textAlign:'center',color:'#aaa',fontSize:'13px'}}>Nenhum paciente encontrado</td></tr>}
@@ -138,6 +163,40 @@ export default function PacientesPage() {
                 <button type="button" onClick={()=>setModal(false)} style={{padding:'9px 16px',border:'0.5px solid rgba(0,0,0,0.25)',borderRadius:'8px',background:'transparent',cursor:'pointer',fontSize:'13px'}}>Cancelar</button>
                 <button type="submit" disabled={saving} style={{padding:'9px 16px',background:saving?'#999':'#185FA5',color:'white',border:'none',borderRadius:'8px',fontSize:'13px',fontWeight:'500',cursor:saving?'default':'pointer'}}>
                   {saving?'Salvando...':'Salvar paciente'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL TELECONSULTA */}
+      {modalConsulta && (
+        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.4)',zIndex:100,display:'flex',alignItems:'center',justifyContent:'center',padding:'20px'}} onClick={e=>{if(e.target===e.currentTarget)setModalConsulta(false)}}>
+          <div style={{background:'white',borderRadius:'14px',padding:'28px',width:'100%',maxWidth:'440px'}}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'20px'}}>
+              <h2 style={{fontSize:'16px',fontWeight:'500'}}>📹 Agendar Teleconsulta</h2>
+              <button onClick={()=>setModalConsulta(false)} style={{background:'none',border:'none',fontSize:'22px',cursor:'pointer',color:'#aaa'}}>×</button>
+            </div>
+            <form onSubmit={agendarConsulta}>
+              <div style={{marginBottom:'14px'}}>
+                <label style={{display:'block',fontSize:'11px',fontWeight:'500',color:'#666',marginBottom:'5px',textTransform:'uppercase',letterSpacing:'0.04em'}}>Data e horário *</label>
+                <input type="datetime-local" value={formConsulta.agendada_para} onChange={e=>setFormConsulta(f=>({...f,agendada_para:e.target.value}))} required
+                  style={{width:'100%',padding:'9px 12px',border:'0.5px solid rgba(0,0,0,0.25)',borderRadius:'8px',fontSize:'13px',background:'white'}} />
+              </div>
+              <div style={{marginBottom:'20px'}}>
+                <label style={{display:'block',fontSize:'11px',fontWeight:'500',color:'#666',marginBottom:'5px',textTransform:'uppercase',letterSpacing:'0.04em'}}>Tipo</label>
+                <select value={formConsulta.tipo} onChange={e=>setFormConsulta(f=>({...f,tipo:e.target.value}))}
+                  style={{width:'100%',padding:'9px 12px',border:'0.5px solid rgba(0,0,0,0.25)',borderRadius:'8px',fontSize:'13px',background:'white'}}>
+                  <option value="teleconsulta">Teleconsulta</option>
+                  <option value="presencial">Presencial</option>
+                  <option value="retorno">Retorno</option>
+                </select>
+              </div>
+              <div style={{display:'flex',justifyContent:'flex-end',gap:'8px'}}>
+                <button type="button" onClick={()=>setModalConsulta(false)} style={{padding:'9px 16px',border:'0.5px solid rgba(0,0,0,0.25)',borderRadius:'8px',background:'transparent',cursor:'pointer',fontSize:'13px'}}>Cancelar</button>
+                <button type="submit" disabled={saving} style={{padding:'9px 16px',background:saving?'#999':'#185FA5',color:'white',border:'none',borderRadius:'8px',fontSize:'13px',fontWeight:'500',cursor:'pointer'}}>
+                  {saving?'Agendando...':'▶ Iniciar agora'}
                 </button>
               </div>
             </form>
